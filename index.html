@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE FOXVERSE - Digital Design. Practical Solutions.</title>
+    <meta name="description" content="THE FOXVERSE: تصميم رقمي ومنتجات رقمية وأدوات تنظيمية للأعمال الصغيرة، من واجهات وقوالب وكتالوجات وبوسترات وبطاقات إلكترونية.">
+    <meta name="theme-color" content="#101B35">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1254 1254'%3E%3Cg stroke='%23101B35' stroke-width='34' stroke-linejoin='round'%3E%3Cpolygon points='277,250 430,390 335,515' fill='%23D49FB9'/%3E%3Cpolygon points='977,250 824,390 919,515' fill='%23D49FB9'/%3E%3Ccircle cx='627' cy='630' r='302' fill='%23C58AA7'/%3E%3Ccircle cx='543' cy='595' r='20' fill='%23101B35'/%3E%3Ccircle cx='711' cy='595' r='20' fill='%23101B35'/%3E%3Cellipse cx='627' cy='728' rx='130' ry='135' fill='%23F4F1F8'/%3E%3Cpolygon points='627,744 589,790 665,790' fill='%23101B35' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E">
+
+    <!-- Tailwind CSS (Play CDN), version pinned. See audit report: acceptable for now, but it is
+         the "development" delivery method; replace with a compiled CSS file when a build step is possible. -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+    <!-- Google Fonts: Cairo (Arabic) & Inter (Latin). SRI is not applicable (the CSS is generated per browser). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome 6.4.0 with Subresource Integrity (the hash published for this exact file on cdnjs) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#101B35',        /* primary / backgrounds */
+                        navyDeep: '#0B1326',    /* darker end of navy gradients */
+                        navyCard: '#18254A',    /* raised surfaces */
+                        mauve: '#C58AA7',       /* accent: buttons, highlights (used sparingly) */
+                        mauveHover: '#D49FB9',  /* accent hover (lighter, keeps contrast with navy text) */
+                        mauveSoft: '#EBD3DF',   /* light tint of the accent, for text on tinted surfaces */
+                        lavender: '#A9A3B5',    /* secondary text, borders, helper elements */
+                        ink: '#F4F1F8',         /* primary light text on dark backgrounds */
+                    },
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        section[id] { scroll-margin-top: 6rem; }   /* keeps headings clear of the sticky header */
+
+        body {
+            font-family: 'Inter', 'Cairo', sans-serif;
+            line-height: 1.75;
+            -webkit-font-smoothing: antialiased;
+            background-color: #101B35;
+            color: #F4F1F8;
+            overflow-x: hidden;
+        }
+
+        /* Visible keyboard focus everywhere (no element removes it) */
+        :focus-visible {
+            outline: 3px solid #EBD3DF;
+            outline-offset: 3px;
+        }
+
+        /* Skip link */
+        .skip-link {
+            position: absolute;
+            inset-inline-start: 0.5rem;
+            top: -5rem;
+            z-index: 100;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            background: #C58AA7;
+            color: #101B35;
+            font-weight: 600;
+        }
+        .skip-link:focus { top: 0.5rem; }
+
+        /* Glowing & glassmorphism effects */
+        .glow-mauve { box-shadow: 0 0 24px rgba(197, 138, 167, 0.22); }
+        .glow-lavender { box-shadow: 0 0 30px rgba(169, 163, 181, 0.12); }
+        .glass-card {
+            background: rgba(24, 37, 74, 0.62);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(169, 163, 181, 0.18);
+        }
+        /* Hover lift is opt-in (it used to apply to the header, footer and the form card too) */
+        .card-hover { transition: transform 0.3s ease, border-color 0.3s ease; }
+        .card-hover:hover { border-color: rgba(197, 138, 167, 0.45); transform: translateY(-5px); }
+
+        /* Starry canvas: fixed to the viewport, never intercepts input */
+        #space-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Form states */
+        .field-input { background: #101B35; border: 1px solid rgba(169, 163, 181, 0.6); }
+        .field-input[aria-invalid="true"] { border-color: #F87171; }
+        fieldset:disabled .field-input { opacity: 0.55; cursor: not-allowed; }
+        fieldset:disabled button[type="submit"] { opacity: 0.6; cursor: not-allowed; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #101B35; }
+        ::-webkit-scrollbar-thumb { background: #2A3963; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #C58AA7; }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+            .card-hover:hover { transform: none; }
+        }
+    </style>
+</head>
+<body class="bg-navy text-ink min-h-screen flex flex-col selection:bg-mauve selection:text-navy">
+
+    <a class="skip-link" href="#main">تخطَّ إلى المحتوى</a>
+
+    <!-- Starry background (decorative) -->
+    <canvas id="space-canvas" aria-hidden="true"></canvas>
+
+    <!-- 01. HEADER -->
+    <header class="sticky top-0 z-50 glass-card border-b border-lavender/15">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <a href="#top" class="flex items-center gap-3 group">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" class="w-10 h-10" aria-hidden="true" focusable="false">
+                    <g stroke="#101B35" stroke-width="34" stroke-linejoin="round" stroke-linecap="round">
+                        <polygon points="277,250 430,390 335,515" fill="#D49FB9"/>
+                        <polygon points="977,250 824,390 919,515" fill="#D49FB9"/>
+                        <circle cx="627" cy="630" r="302" fill="#C58AA7"/>
+                        <circle cx="543" cy="595" r="20" fill="#101B35"/>
+                        <circle cx="711" cy="595" r="20" fill="#101B35"/>
+                        <ellipse cx="627" cy="728" rx="130" ry="135" fill="#F4F1F8"/>
+                        <polygon points="627,744 589,790 665,790" fill="#101B35" stroke-width="6"/>
+                    </g>
+                </svg>
+                <div class="flex flex-col" lang="en" dir="ltr">
+                    <span class="font-semibold text-xl tracking-wider text-ink">THE FOXVERSE</span>
+                    <span class="text-[11px] tracking-widest text-mauve font-semibold uppercase">Digital Design</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links (Desktop) -->
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-lavender" aria-label="التنقل الرئيسي">
+                <a href="#services" class="hover:text-mauve transition-colors">الخدمات</a>
+                <a href="#principles" class="hover:text-mauve transition-colors">مبادئ التصميم</a>
+                <!-- STORE: when store.html is uploaded to the repository, add the link here:
+                <a href="store.html" class="hover:text-mauve transition-colors">المتجر</a>
+                (and the same link inside #mobile-menu below) -->
+                <a href="#contact" class="hover:text-mauve transition-colors">تواصل معنا</a>
+            </nav>
+
+            <!-- CTA Button & Mobile Menu Toggle -->
+            <div class="flex items-center gap-4">
+                <a href="#contact" class="hidden sm:inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-mauve hover:bg-mauveHover text-navy font-semibold text-sm glow-mauve transition-colors duration-300">
+                    تواصل معنا
+                </a>
+                <button id="menu-btn" type="button" class="md:hidden text-lavender hover:text-ink p-2 min-w-[2.75rem] min-h-[2.75rem]"
+                        aria-label="فتح القائمة" aria-expanded="false" aria-controls="mobile-menu">
+                    <i id="menu-icon" class="fa-solid fa-bars text-xl" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <nav id="mobile-menu" class="hidden md:hidden glass-card border-t border-lavender/15 px-6 py-4 space-y-3" aria-label="قائمة الجوال">
+            <a href="#services" class="block text-lavender hover:text-mauve py-2">الخدمات</a>
+            <a href="#principles" class="block text-lavender hover:text-mauve py-2">مبادئ التصميم</a>
+            <a href="#contact" class="block text-lavender hover:text-mauve py-2">تواصل معنا</a>
+            <div class="pt-2">
+                <a href="#contact" class="w-full inline-block text-center px-6 py-2.5 rounded-full bg-mauve text-navy font-semibold text-sm glow-mauve">
+                    تواصل معنا
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Wrapper -->
+    <main id="main" class="flex-grow relative z-10">
+        <span id="top"></span>
+
+        <!-- 02. HERO SECTION -->
+        <section aria-labelledby="hero-title" class="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-20 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+
+                <!-- Hero Text Content -->
+                <div class="lg:col-span-7 space-y-6 text-right">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-mauve/10 border border-mauve/30 text-mauve text-xs font-semibold">
+                        <i class="fa-solid fa-pen-nib" aria-hidden="true"></i>
+                        <span>التصميم الرقمي</span>
+                    </div>
+
+                    <h1 id="hero-title" lang="en" dir="ltr" class="text-[1.75rem] min-[400px]:text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.15] text-balance text-ink text-right">
+                        Digital Design. <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-mauve via-mauveSoft to-lavender">
+                            Practical Solutions.
+                        </span>
+                    </h1>
+
+                    <p class="text-base sm:text-lg text-lavender max-w-2xl leading-[1.85] font-normal">
+                        نصمّم واجهات وقوالب وكتالوجات وبوسترات وبطاقات إلكترونية، ونطوّر أدوات رقمية تنظّم العمل وتمنح الأفكار حضورًا احترافيًا.
+                    </p>
+
+                    <div class="flex flex-wrap gap-4 pt-4">
+                        <a href="#services" class="px-7 py-3.5 rounded-xl bg-mauve hover:bg-mauveHover text-navy font-semibold text-sm sm:text-base glow-mauve transition-colors inline-flex items-center gap-3">
+                            <span>استكشف الخدمات</span>
+                            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                        </a>
+                        <a href="#principles" class="px-7 py-3.5 rounded-xl glass-card hover:bg-lavender/10 text-ink font-semibold text-sm sm:text-base transition-colors inline-flex items-center gap-3">
+                            <span>مبادئ التصميم</span>
+                            <i class="fa-solid fa-compass-drafting text-mauve" aria-hidden="true"></i>
+                        </a>
+                    </div>
+
+                    <!-- What we make (descriptive only: no metrics, no availability or sales claims) -->
+                    <ul class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-10 border-t border-lavender/20 mt-8 list-none p-0">
+                        <li>
+                            <div class="text-base font-semibold text-ink flex items-center gap-2">
+                                <i class="fa-solid fa-palette" aria-hidden="true"></i>
+                                <span>التصميم الرقمي</span>
+                            </div>
+                            <div class="text-sm text-lavender mt-1">واجهات وقوالب وكتالوجات وبوسترات وبطاقات إلكترونية بتصاميم احترافية قابلة للتخصيص.</div>
+                        </li>
+                        <li>
+                            <div class="text-base font-semibold text-mauve flex items-center gap-2">
+                                <i class="fa-solid fa-toolbox" aria-hidden="true"></i>
+                                <span>منتجات رقمية عملية</span>
+                            </div>
+                            <div class="text-sm text-lavender mt-1">قوالب جاهزة وأدوات تنظيمية تساعد الأفراد وأصحاب الأعمال على إدارة مهامهم وعرض منتجاتهم بوضوح.</div>
+                        </li>
+                        <li>
+                            <div class="text-base font-semibold text-lavender flex items-center gap-2">
+                                <i class="fa-solid fa-store" aria-hidden="true"></i>
+                                <span>حلول للأعمال الصغيرة</span>
+                            </div>
+                            <div class="text-sm text-lavender mt-1">مواد رقمية تساعد أصحاب المشاريع والبائعين على تقديم منتجاتهم وتنظيم عروضهم والتواصل مع عملائهم.</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Hero Illustration (decorative: carries no unique information) -->
+                <div class="lg:col-span-5 relative flex justify-center items-center" aria-hidden="true">
+                    <div class="relative w-full max-w-md min-h-[26rem] rounded-3xl glass-card p-6 sm:p-8 flex flex-col justify-between gap-6 overflow-hidden shadow-2xl glow-lavender">
+                        <div class="absolute -top-20 -right-20 w-64 h-64 bg-mauve/20 rounded-full blur-3xl pointer-events-none"></div>
+                        <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-lavender/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <div class="flex justify-between items-center z-10">
+                            <span class="text-xs font-mono text-lavender">THE FOXVERSE</span>
+                        </div>
+
+                        <div class="my-auto py-4 flex flex-col items-center justify-center z-10 space-y-4 text-center">
+                            <div class="w-28 h-28 rounded-full bg-gradient-to-tr from-mauve/40 to-lavender/30 p-1 flex items-center justify-center relative glow-mauve">
+                                <div class="w-full h-full rounded-full bg-navy flex items-center justify-center">
+                                    <i class="fa-solid fa-swatchbook text-4xl text-mauve animate-pulse"></i>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-ink font-semibold text-lg">التصميم الرقمي</p>
+                                <p class="text-xs text-lavender mt-1">حلول عملية للأعمال الصغيرة</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 z-10">
+                            <div class="bg-navyDeep/60 p-4 rounded-xl border border-lavender/15">
+                                <div class="text-xs text-lavender">نصمّم</div>
+                                <div class="text-sm font-semibold text-mauve mt-1">قوالب وكتالوجات</div>
+                            </div>
+                            <div class="bg-navyDeep/60 p-4 rounded-xl border border-lavender/15">
+                                <div class="text-xs text-lavender">نطوّر</div>
+                                <div class="text-sm font-semibold text-ink mt-1">أدوات تنظيمية</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 03. WHAT WE DO (Services) -->
+        <section id="services" aria-labelledby="services-title" class="py-20 sm:py-24 relative px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-navy to-navyDeep">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center max-w-3xl mx-auto mb-12 sm:mb-14 space-y-4">
+                    <span class="text-mauve text-sm font-semibold">ماذا نقدم؟ <span lang="en" dir="ltr" class="tracking-wide">(WHAT WE DO)</span></span>
+                    <h2 id="services-title" class="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-normal text-ink">من الفكرة إلى منتج رقمي جاهز</h2>
+                    <p class="text-lavender text-base leading-8">منهج عمل منظّم يحوّل احتياجات الأفراد وأصحاب الأعمال إلى تصاميم ومنتجات رقمية عملية، واضحة، وقابلة للتخصيص.</p>
+                </div>
+
+                <ol class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 list-none p-0">
+
+                    <!-- Stage 1 -->
+                    <li class="glass-card card-hover p-6 sm:p-7 rounded-2xl relative group flex flex-col justify-between">
+                        <div class="space-y-4 min-w-0">
+                            <div class="w-14 h-14 rounded-xl bg-mauve/10 border border-mauve/30 flex items-center justify-center text-mauve text-2xl" aria-hidden="true">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-ink leading-snug">فهم الاحتياج</h3>
+                            <p class="text-lavender text-sm leading-[1.8]">
+                                تحديد طبيعة النشاط والجمهور المستهدف والغرض من التصميم أو الأداة الرقمية، لفهم المطلوب قبل البدء بالتنفيذ.
+                            </p>
+                        </div>
+                        <div class="pt-6 mt-6 border-t border-lavender/15 text-xs text-mauve font-semibold">
+                            <span>المرحلة الأولى</span>
+                        </div>
+                    </li>
+
+                    <!-- Stage 2 -->
+                    <li class="glass-card card-hover p-6 sm:p-7 rounded-2xl relative group flex flex-col justify-between">
+                        <div class="space-y-4 min-w-0">
+                            <div class="w-14 h-14 rounded-xl bg-lavender/10 border border-lavender/30 flex items-center justify-center text-lavender text-2xl" aria-hidden="true">
+                                <i class="fa-solid fa-pen-ruler"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-ink leading-snug">التخطيط والتصميم</h3>
+                            <p class="text-lavender text-sm leading-[1.8]">
+                                تنظيم المحتوى واختيار الهيكل البصري المناسب، مع مراعاة الهوية البصرية وسهولة الاستخدام ووضوح المعلومات.
+                            </p>
+                        </div>
+                        <div class="pt-6 mt-6 border-t border-lavender/15 text-xs text-lavender font-semibold">
+                            <span>المرحلة الثانية</span>
+                        </div>
+                    </li>
+
+                    <!-- Stage 3 -->
+                    <li class="glass-card card-hover p-6 sm:p-7 rounded-2xl relative group flex flex-col justify-between">
+                        <div class="space-y-4 min-w-0">
+                            <div class="w-14 h-14 rounded-xl bg-mauve/10 border border-mauve/30 flex items-center justify-center text-mauve text-2xl" aria-hidden="true">
+                                <i class="fa-solid fa-sliders"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-ink leading-snug">الإنتاج والتخصيص</h3>
+                            <p class="text-lavender text-sm leading-[1.8]">
+                                إنشاء الواجهات والقوالب والكتالوجات والبوسترات والبطاقات الإلكترونية والأدوات التنظيمية، بما يتناسب مع احتياجات المشروع.
+                            </p>
+                        </div>
+                        <div class="pt-6 mt-6 border-t border-lavender/15 text-xs text-mauve font-semibold">
+                            <span>المرحلة الثالثة</span>
+                        </div>
+                    </li>
+
+                    <!-- Stage 4 -->
+                    <li class="glass-card card-hover p-6 sm:p-7 rounded-2xl relative group flex flex-col justify-between">
+                        <div class="space-y-4 min-w-0">
+                            <div class="w-14 h-14 rounded-xl bg-lavender/10 border border-lavender/30 flex items-center justify-center text-lavender text-2xl" aria-hidden="true">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-ink leading-snug">المراجعة والتسليم</h3>
+                            <p class="text-lavender text-sm leading-[1.8]">
+                                مراجعة جودة التصميم والمحتوى والتنسيق، والتحقق من جاهزية الملفات للاستخدام، ثم تسليم المنتج بالصيغة المتفق عليها.
+                            </p>
+                        </div>
+                        <div class="pt-6 mt-6 border-t border-lavender/15 text-xs text-lavender font-semibold">
+                            <span>المرحلة الرابعة</span>
+                        </div>
+                    </li>
+
+                </ol>
+
+                <!-- Work areas (text supplied by the owner; descriptive only, no links) -->
+                <div class="mt-12 sm:mt-14 max-w-5xl mx-auto">
+                    <h3 class="text-lg font-semibold text-ink leading-snug text-center mb-6">مجالات عملنا</h3>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 list-none p-0">
+                        <li class="glass-card rounded-xl px-5 py-4 flex items-start gap-3 min-w-0">
+                            <i class="fa-solid fa-check text-mauve mt-1.5" aria-hidden="true"></i>
+                            <span class="text-ink text-sm leading-[1.8]">تصميم الواجهات والقوالب الرقمية.</span>
+                        </li>
+                        <li class="glass-card rounded-xl px-5 py-4 flex items-start gap-3 min-w-0">
+                            <i class="fa-solid fa-check text-mauve mt-1.5" aria-hidden="true"></i>
+                            <span class="text-ink text-sm leading-[1.8]">إعداد الكتالوجات وقوائم الأسعار.</span>
+                        </li>
+                        <li class="glass-card rounded-xl px-5 py-4 flex items-start gap-3 min-w-0">
+                            <i class="fa-solid fa-check text-mauve mt-1.5" aria-hidden="true"></i>
+                            <span class="text-ink text-sm leading-[1.8]">تصميم البوسترات والمواد الترويجية.</span>
+                        </li>
+                        <li class="glass-card rounded-xl px-5 py-4 flex items-start gap-3 min-w-0">
+                            <i class="fa-solid fa-check text-mauve mt-1.5" aria-hidden="true"></i>
+                            <span class="text-ink text-sm leading-[1.8]">تصميم البطاقات الإلكترونية.</span>
+                        </li>
+                        <li class="glass-card rounded-xl px-5 py-4 flex items-start gap-3 min-w-0">
+                            <i class="fa-solid fa-check text-mauve mt-1.5" aria-hidden="true"></i>
+                            <span class="text-ink text-sm leading-[1.8]">إعداد الأدوات والقوالب التنظيمية للأعمال الصغيرة.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 04. ENGINEERING PRINCIPLES -->
+        <section id="principles" aria-labelledby="principles-title" class="py-20 sm:py-24 relative px-4 sm:px-6 lg:px-8 overflow-hidden">
+            <div class="max-w-7xl mx-auto">
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+
+                    <!-- Visual (decorative) -->
+                    <div class="lg:col-span-6 relative flex justify-center" aria-hidden="true">
+                        <div class="w-full max-w-lg min-h-[22rem] rounded-3xl glass-card p-6 sm:p-8 flex flex-col justify-center relative overflow-hidden glow-mauve">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-mauve/10 via-transparent to-lavender/10 pointer-events-none"></div>
+
+                            <div class="relative z-10 space-y-8">
+                                <div class="flex justify-between items-center">
+                                    <div class="px-3 py-1 rounded bg-mauve/20 text-mauve text-xs font-mono">DESIGN PRINCIPLES</div>
+                                    <div class="text-xs text-lavender">CONNECTING THE DOTS</div>
+                                </div>
+
+                                <div class="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                                    <div class="w-20 h-20 rounded-full bg-mauve/20 border border-mauve/50 flex items-center justify-center text-mauve text-3xl animate-bounce">
+                                        <i class="fa-solid fa-compass-drafting"></i>
+                                    </div>
+                                    <p class="text-ink font-semibold text-xl">تصميم له غاية</p>
+                                    <p class="text-sm text-lavender max-w-xs">نصنع منتجات رقمية تجمع بين وضوح الفكرة وجودة التصميم وسهولة الاستخدام.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Principles list -->
+                    <div class="lg:col-span-6 space-y-8 text-right">
+                        <div>
+                            <span class="text-mauve text-sm font-semibold">مبادئ التصميم والإنتاج</span>
+                            <h2 id="principles-title" class="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-normal text-ink mt-2">المعايير التي توجّه عملنا في THE FOXVERSE</h2>
+                        </div>
+
+                        <ul class="space-y-6 list-none p-0">
+                            <li class="flex gap-4 items-start">
+                                <div class="w-12 h-12 rounded-xl bg-mauve/10 border border-mauve/30 flex-shrink-0 flex items-center justify-center text-mauve font-semibold text-lg" aria-hidden="true">01</div>
+                                <div class="min-w-0">
+                                    <h3 class="text-lg font-semibold text-ink leading-snug">الوضوح البصري <span lang="en" dir="ltr">(Visual Clarity)</span></h3>
+                                    <p class="text-lavender text-sm mt-1">ننظّم المحتوى والعناصر البصرية لتكون المعلومات واضحة وسهلة الفهم والوصول.</p>
+                                </div>
+                            </li>
+
+                            <li class="flex gap-4 items-start">
+                                <div class="w-12 h-12 rounded-xl bg-lavender/10 border border-lavender/30 flex-shrink-0 flex items-center justify-center text-lavender font-semibold text-lg" aria-hidden="true">02</div>
+                                <div class="min-w-0">
+                                    <h3 class="text-lg font-semibold text-ink leading-snug">تجربة الاستخدام <span lang="en" dir="ltr">(User Experience)</span></h3>
+                                    <p class="text-lavender text-sm mt-1">نراعي سهولة الاستخدام وترتيب المعلومات بما يجعل المنتج الرقمي عمليًا ومريحًا للمستخدم.</p>
+                                </div>
+                            </li>
+
+                            <li class="flex gap-4 items-start">
+                                <div class="w-12 h-12 rounded-xl bg-mauve/10 border border-mauve/30 flex-shrink-0 flex items-center justify-center text-mauve font-semibold text-lg" aria-hidden="true">03</div>
+                                <div class="min-w-0">
+                                    <h3 class="text-lg font-semibold text-ink leading-snug">الاتساق البصري <span lang="en" dir="ltr">(Visual Consistency)</span></h3>
+                                    <p class="text-lavender text-sm mt-1">نحرص على تناسق الألوان والخطوط والتخطيطات بما يدعم هوية المشروع ويمنح التصميم مظهرًا متكاملًا.</p>
+                                </div>
+                            </li>
+
+                            <li class="flex gap-4 items-start">
+                                <div class="w-12 h-12 rounded-xl bg-lavender/10 border border-lavender/30 flex-shrink-0 flex items-center justify-center text-lavender font-semibold text-lg" aria-hidden="true">04</div>
+                                <div class="min-w-0">
+                                    <h3 class="text-lg font-semibold text-ink leading-snug">الجودة وقابلية التخصيص <span lang="en" dir="ltr">(Quality &amp; Customization)</span></h3>
+                                    <p class="text-lavender text-sm mt-1">نراجع التفاصيل والتنسيقات، ونصمم المنتجات بما يسمح بتخصيصها وفق الاحتياجات المحددة لكل مشروع.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 05. CONTACT -->
+        <section id="contact" aria-labelledby="contact-title" class="py-20 sm:py-24 relative px-4 sm:px-6 lg:px-8 bg-gradient-to-t from-navy to-navyDeep border-t border-lavender/15">
+            <div class="max-w-7xl mx-auto">
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+
+                    <!-- Info -->
+                    <div class="lg:col-span-5 space-y-6">
+                        <span class="text-mauve text-sm font-semibold">دعوة للتعاون</span>
+                        <h2 id="contact-title" class="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-normal text-ink">لنجعل فكرتك منتجًا رقميًا</h2>
+                        <p class="text-lavender text-base leading-8">
+                            هل تحتاج إلى كتالوج لمنتجاتك، أو قالب يعكس هوية مشروعك، أو تصميم ترويجي، أو أداة تنظّم عملك؟ أخبرنا بما تحتاج إليه، ولنحدّد معًا الشكل المناسب لتنفيذه.
+                        </p>
+
+                        <!-- CONTACT DETAILS: add ONLY verified details here (email, phone, city, social accounts).
+                             Example row:
+                             <div class="flex items-center gap-4 text-lavender">
+                                 <div class="w-12 h-12 rounded-xl glass-card flex items-center justify-center text-mauve"><i class="fa-solid fa-envelope" aria-hidden="true"></i></div>
+                                 <div><div class="text-xs text-lavender">البريد الإلكتروني</div>
+                                 <a class="font-semibold text-ink" href="mailto:REAL-ADDRESS">REAL-ADDRESS</a></div>
+                             </div>
+                             Social links: use real URLs with target="_blank" rel="noopener noreferrer" and an aria-label naming the platform. -->
+                        <div class="glass-card rounded-2xl p-6 sm:p-7">
+                            <h3 class="text-lg font-semibold text-ink leading-snug">تواصل مع THE FOXVERSE</h3>
+                            <p class="text-lavender text-sm mt-2 leading-[1.8]">
+                                نعمل على تجهيز قنوات التواصل الرسمية. ستُعلن بيانات التواصل المعتمدة هنا فور جاهزيتها.
+                            </p>
+                            <div class="mt-4 pt-4 border-t border-lavender/20">
+                                <h4 class="text-sm font-semibold text-mauve">قنوات التواصل قيد الإعداد</h4>
+                                <p class="text-lavender text-sm mt-1 leading-[1.8]">
+                                    لم تُعتمد بعد بيانات التواصل الرسمية. سنحدّث هذه المساحة عند جاهزية القنوات.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Form -->
+                    <div class="lg:col-span-7">
+                        <div class="glass-card p-6 sm:p-10 rounded-3xl relative glow-mauve">
+                            <h3 class="text-xl font-semibold text-ink mb-4">أرسل لنا استفسارك</h3>
+
+                            <!-- Honest availability notice: visible while no submission service is configured -->
+                            <p id="form-unavailable" class="mb-6 p-4 rounded-xl bg-mauve/10 border border-mauve/40 text-mauveSoft text-sm leading-[1.8]">
+                                هذا النموذج غير مربوط بخدمة إرسال حتى الآن، لذلك لا يمكن إرسال الرسائل منه حالياً.
+                            </p>
+
+                            <!-- Status messages (success is shown ONLY after a confirmed successful delivery) -->
+                            <div id="form-status" role="status" aria-live="polite" tabindex="-1" class="hidden mb-6 p-4 rounded-xl text-sm"></div>
+
+                            <form id="contact-form" method="post" novalidate>
+                                <!-- Disabled until a real submission service is configured (see FORM_ENDPOINT in the script) -->
+                                <fieldset id="form-fields" class="space-y-6 border-0 p-0 m-0 min-w-0" disabled>
+                                    <legend class="sr-only">نموذج التواصل</legend>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div class="space-y-2">
+                                            <label for="field-name" class="block text-sm text-ink font-semibold">الاسم الكريم</label>
+                                            <input id="field-name" name="name" type="text" required autocomplete="name"
+                                                   aria-describedby="error-name"
+                                                   class="field-input w-full px-4 py-3 rounded-xl text-ink" placeholder="أدخل اسمك الكامل">
+                                            <p id="error-name" class="text-sm text-red-300 min-h-[1.25rem]" aria-live="polite"></p>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <label for="field-email" class="block text-sm text-ink font-semibold">البريد الإلكتروني</label>
+                                            <input id="field-email" name="email" type="email" required autocomplete="email" dir="ltr"
+                                                   aria-describedby="error-email"
+                                                   class="field-input w-full px-4 py-3 rounded-xl text-ink text-right" placeholder="name@example.com">
+                                            <p id="error-email" class="text-sm text-red-300 min-h-[1.25rem]" aria-live="polite"></p>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label for="field-service" class="block text-sm text-ink font-semibold">طبيعة المشروع أو الخدمة المطلوبة</label>
+                                        <select id="field-service" name="service" required aria-describedby="error-service"
+                                                class="field-input w-full px-4 py-3 rounded-xl text-ink">
+                                            <option value="" class="bg-navy" selected>اختر من القائمة</option>
+                                            <option value="interfaces-templates" class="bg-navy">تصميم الواجهات والقوالب الرقمية</option>
+                                            <option value="catalogs-price-lists" class="bg-navy">تصميم الكتالوجات وقوائم الأسعار</option>
+                                            <option value="posters-promotional" class="bg-navy">تصميم البوسترات والمواد الترويجية</option>
+                                            <option value="e-cards" class="bg-navy">تصميم البطاقات الإلكترونية</option>
+                                            <option value="organizing-tools-templates" class="bg-navy">الأدوات والقوالب التنظيمية</option>
+                                        </select>
+                                        <p id="error-service" class="text-sm text-red-300 min-h-[1.25rem]" aria-live="polite"></p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label for="field-message" class="block text-sm text-ink font-semibold">تفاصيل الرسالة أو المشروع</label>
+                                        <textarea id="field-message" name="message" rows="4" required aria-describedby="hint-message error-message"
+                                                  class="field-input w-full px-4 py-3 rounded-xl text-ink" placeholder="اكتب نبذة مختصرة عن متطلباتك..."></textarea>
+                                        <p id="hint-message" class="text-sm text-lavender leading-[1.8]">اذكر نوع المنتج أو الخدمة المطلوبة، والغرض منها، وأي ألوان أو نصوص تفضّلها.</p>
+                                        <p id="error-message" class="text-sm text-red-300 min-h-[1.25rem]" aria-live="polite"></p>
+                                    </div>
+
+                                    <button type="submit" class="w-full py-4 rounded-xl bg-mauve hover:bg-mauveHover text-navy font-semibold text-base glow-mauve transition-colors flex items-center justify-center gap-3">
+                                        <span id="submit-label">إرسال الطلب</span>
+                                        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                                    </button>
+                                </fieldset>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="relative z-10 glass-card border-t border-lavender/15 py-8 text-sm text-lavender">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-5 text-center">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" class="w-8 h-8" aria-hidden="true" focusable="false">
+                    <g stroke="#101B35" stroke-width="34" stroke-linejoin="round" stroke-linecap="round">
+                        <polygon points="277,250 430,390 335,515" fill="#D49FB9"/>
+                        <polygon points="977,250 824,390 919,515" fill="#D49FB9"/>
+                        <circle cx="627" cy="630" r="302" fill="#C58AA7"/>
+                        <circle cx="543" cy="595" r="20" fill="#101B35"/>
+                        <circle cx="711" cy="595" r="20" fill="#101B35"/>
+                        <ellipse cx="627" cy="728" rx="130" ry="135" fill="#F4F1F8"/>
+                        <polygon points="627,744 589,790 665,790" fill="#101B35" stroke-width="6"/>
+                    </g>
+                </svg>
+                <span class="font-semibold text-ink tracking-wider" lang="en" dir="ltr">THE FOXVERSE</span>
+            </div>
+            <p class="m-0">
+                جميع الحقوق محفوظة &copy; 2026 THE FOXVERSE. <span lang="en" dir="ltr">Digital Design. Practical Solutions.</span>
+            </p>
+            <!-- LEGAL PAGES: replace each span with <a href="privacy.html">…</a> / <a href="terms.html">…</a>
+                 once those pages really exist. -->
+            <div class="flex gap-6 text-xs">
+                <span>سياسة الخصوصية: قيد الإعداد</span>
+                <span>شروط الخدمة: قيد الإعداد</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /* =====================================================================
+           CONFIGURATION
+           FORM_ENDPOINT: URL of a real form-submission service (it must accept a
+           POST with form fields and answer with a 2xx status on success).
+           It is intentionally EMPTY: no service has been chosen or verified, so the
+           form stays disabled and never claims that anything was sent.
+           ===================================================================== */
+        const FORM_ENDPOINT = '';
+
+        /* ---------------------------------------------------------------------
+           Mobile menu
+           --------------------------------------------------------------------- */
+        (function () {
+            const menuBtn = document.getElementById('menu-btn');
+            const menuIcon = document.getElementById('menu-icon');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (!menuBtn || !mobileMenu) { return; }
+
+            function setMenu(open) {
+                mobileMenu.classList.toggle('hidden', !open);
+                menuBtn.setAttribute('aria-expanded', String(open));
+                menuBtn.setAttribute('aria-label', open ? 'إغلاق القائمة' : 'فتح القائمة');
+                menuIcon.className = (open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars') + ' text-xl';
+            }
+
+            menuBtn.addEventListener('click', function () {
+                setMenu(menuBtn.getAttribute('aria-expanded') !== 'true');
+            });
+
+            mobileMenu.addEventListener('click', function (e) {
+                if (e.target.closest('a')) { setMenu(false); }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && menuBtn.getAttribute('aria-expanded') === 'true') {
+                    setMenu(false);
+                    menuBtn.focus();
+                }
+            });
+
+            const desktop = window.matchMedia('(min-width: 768px)');
+            const onChange = function (e) { if (e.matches) { setMenu(false); } };
+            if (desktop.addEventListener) { desktop.addEventListener('change', onChange); }
+            else if (desktop.addListener) { desktop.addListener(onChange); }
+        })();
+
+        /* ---------------------------------------------------------------------
+           Contact form: validation + honest status messages
+           --------------------------------------------------------------------- */
+        (function () {
+            const form = document.getElementById('contact-form');
+            const fieldset = document.getElementById('form-fields');
+            const notice = document.getElementById('form-unavailable');
+            const statusBox = document.getElementById('form-status');
+            const submitLabel = document.getElementById('submit-label');
+            if (!form) { return; }
+
+            const hasEndpoint = typeof FORM_ENDPOINT === 'string' && /^https?:\/\//i.test(FORM_ENDPOINT.trim());
+
+            if (hasEndpoint) {
+                fieldset.disabled = false;
+                notice.classList.add('hidden');
+            } else {
+                // No service configured: the form stays disabled and the notice stays visible.
+                form.addEventListener('submit', function (e) { e.preventDefault(); });
+                return;
+            }
+
+            const fields = [
+                { el: document.getElementById('field-name'), err: document.getElementById('error-name'),
+                  check: function (v) { return v.trim().length >= 2 ? '' : 'يرجى إدخال الاسم (حرفان على الأقل).'; } },
+                { el: document.getElementById('field-email'), err: document.getElementById('error-email'),
+                  check: function (v, el) {
+                      if (!v.trim()) { return 'يرجى إدخال البريد الإلكتروني.'; }
+                      return el.checkValidity() ? '' : 'يرجى إدخال بريد إلكتروني صحيح.';
+                  } },
+                { el: document.getElementById('field-service'), err: document.getElementById('error-service'),
+                  check: function (v) { return v ? '' : 'يرجى اختيار الخدمة المطلوبة.'; } },
+                { el: document.getElementById('field-message'), err: document.getElementById('error-message'),
+                  check: function (v) { return v.trim().length >= 10 ? '' : 'يرجى كتابة تفاصيل الرسالة (10 أحرف على الأقل).'; } }
+            ];
+
+            function showStatus(kind, text) {
+                statusBox.className = 'mb-6 p-4 rounded-xl text-sm ' + (kind === 'success'
+                    ? 'bg-lavender/15 border border-lavender/50 text-ink'
+                    : 'bg-red-500/15 border border-red-500/50 text-red-200');
+                statusBox.textContent = text;
+                statusBox.focus();
+            }
+
+            function validateField(f) {
+                const message = f.check(f.el.value, f.el);
+                f.err.textContent = message;
+                f.el.setAttribute('aria-invalid', message ? 'true' : 'false');
+                return !message;
+            }
+
+            fields.forEach(function (f) {
+                f.el.addEventListener('input', function () {
+                    if (f.el.getAttribute('aria-invalid') === 'true') { validateField(f); }
+                });
+            });
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                statusBox.className = 'hidden';
+
+                let firstInvalid = null;
+                fields.forEach(function (f) {
+                    if (!validateField(f) && !firstInvalid) { firstInvalid = f.el; }
+                });
+                if (firstInvalid) {
+                    showStatus('error', 'يرجى تصحيح الحقول المحددة ثم إعادة المحاولة.');
+                    firstInvalid.focus();
+                    return;
+                }
+
+                fieldset.disabled = true;
+                submitLabel.textContent = 'جارٍ الإرسال…';
+                try {
+                    const response = await fetch(FORM_ENDPOINT.trim(), {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!response.ok) { throw new Error('HTTP ' + response.status); }
+                    // Success is reported only after the service confirmed receipt.
+                    form.reset();
+                    showStatus('success', 'تم استلام رسالتك. شكراً لتواصلك.');
+                } catch (err) {
+                    showStatus('error', 'تعذّر إرسال الرسالة. لم يتم إرسال أي شيء، يرجى المحاولة لاحقاً.');
+                } finally {
+                    fieldset.disabled = false;
+                    submitLabel.textContent = 'إرسال الطلب';
+                }
+            });
+        })();
+
+        /* ---------------------------------------------------------------------
+           Starry background
+           - fixed full-viewport canvas, ~30 fps, capped star count
+           - constellation lines are computed ONCE per resize and cached,
+             so there are no per-frame pairwise distance calculations
+           - paused while the tab is hidden; static when reduced motion is requested
+           --------------------------------------------------------------------- */
+        (function () {
+            const canvas = document.getElementById('space-canvas');
+            if (!canvas || !canvas.getContext) { return; }
+            const ctx = canvas.getContext('2d');
+            const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const FRAME_MS = 1000 / 30;
+            const LINK_DISTANCE = 120;
+
+            let width = 0, height = 0;
+            let stars = [];
+            let linesLayer = null;
+            let rafId = null;
+            let lastTime = 0;
+            let resizeTimer = null;
+
+            function starTarget(w, h) {
+                const cap = w < 640 ? 35 : 70;
+                return Math.min(cap, Math.floor((w * h) / 20000));
+            }
+
+            function build() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+
+                stars = [];
+                const count = starTarget(width, height);
+                for (let i = 0; i < count; i++) {
+                    stars.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 1.5 + 0.5,
+                        phase: Math.random() * Math.PI * 2,
+                        speed: Math.random() + 0.5
+                    });
+                }
+
+                linesLayer = document.createElement('canvas');
+                linesLayer.width = width;
+                linesLayer.height = height;
+                const lctx = linesLayer.getContext('2d');
+                lctx.strokeStyle = 'rgba(169, 163, 181, 0.12)';
+                lctx.lineWidth = 0.5;
+                lctx.beginPath();
+                for (let i = 0; i < stars.length; i++) {
+                    for (let j = i + 1; j < stars.length; j++) {
+                        const dx = stars[i].x - stars[j].x;
+                        const dy = stars[i].y - stars[j].y;
+                        if (dx * dx + dy * dy < LINK_DISTANCE * LINK_DISTANCE) {
+                            lctx.moveTo(stars[i].x, stars[i].y);
+                            lctx.lineTo(stars[j].x, stars[j].y);
+                        }
+                    }
+                }
+                lctx.stroke();
+            }
+
+            function draw(time) {
+                ctx.clearRect(0, 0, width, height);
+                ctx.globalAlpha = 1;
+                ctx.drawImage(linesLayer, 0, 0);
+                ctx.fillStyle = '#F4F1F8';
+                const t = time / 1000;
+                for (let i = 0; i < stars.length; i++) {
+                    const s = stars[i];
+                    ctx.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            function loop(time) {
+                rafId = requestAnimationFrame(loop);
+                if (time - lastTime < FRAME_MS) { return; }
+                lastTime = time;
+                draw(time);
+            }
+
+            function start() {
+                if (rafId !== null || reduceQuery.matches || document.hidden) { return; }
+                rafId = requestAnimationFrame(loop);
+            }
+
+            function stop() {
+                if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+            }
+
+            function refresh() {
+                stop();
+                build();
+                if (reduceQuery.matches) { draw(0); } else { start(); }
+            }
+
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function () {
+                    // Ignore small height changes (mobile browser toolbars showing/hiding).
+                    if (window.innerWidth === width && Math.abs(window.innerHeight - height) < 150) { return; }
+                    refresh();
+                }, 200);
+            });
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) { stop(); } else if (!reduceQuery.matches) { start(); }
+            });
+
+            if (reduceQuery.addEventListener) { reduceQuery.addEventListener('change', refresh); }
+            else if (reduceQuery.addListener) { reduceQuery.addListener(refresh); }
+
+            refresh();
+        })();
+    </script>
+</body>
+</html>
